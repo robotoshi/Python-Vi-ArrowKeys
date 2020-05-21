@@ -17,7 +17,8 @@ gstate = {						# global state of the system
 
 	"icon": None,				# system tray icon
 	"enabled": True,			# system tray enabled
-	"shiftDown": False			# whether or not shift is being pressed. Numlock fix makes checking this slightly weirder.
+	"shiftDown": False,			# whether or not shift is being pressed. Numlock fix makes checking this slightly weirder.
+	"stickyShift": False		# state of sticky shift.  Allows shift to be released before the d and still make it uppercase
 }
 
 config = {
@@ -110,12 +111,19 @@ def hookCallback(event):
 	if (nameL == 'd'):
 		if down_event:
 			# alternatively we could reset viTriggeredYet=False here
-			gstate['dSentYet'] = False						# reset to not sent yet
+			gstate['dSentYet'] = False	# reset to not sent yet
+
+			# engage sticky shift the first time a 'd' is pressed while shift is down
+			gstate['stickyShift'] = not gstate['stickyShift'] and gstate['shiftDown']
 		else:
-			if (not gstate['viTriggeredYet']) and (not gstate['dSentYet']):
-				kb.send('d')
+			if not gstate['viTriggeredYet'] and not gstate['dSentYet']:
+				if gstate['stickyShift']:
+					kb.write('D')		# send a capital D
+				else:
+					kb.send('d')		# send a lowercase d
 				gstate['dSentYet'] = True
-			gstate['viTriggeredYet'] = False # reset to false
+			gstate['viTriggeredYet'] = False	# reset to false
+			gstate['stickyShift'] = False
 
 
 	# SECTION 5: Fix "worl/world" bug
@@ -129,6 +137,7 @@ def hookCallback(event):
 	# SECTION 6: Perform VI arrow remapping
 	if (nameL in config['maps'].keys()) and isDown('d'):
 		gstate['viTriggeredYet'] = True # VI triggered, no longer type a 'd' on release
+		gstate['stickyShift'] = False
 		thisSend = config['maps'][nameL]
 		if down_event:
 			kb.press(thisSend)
@@ -140,7 +149,7 @@ def hookCallback(event):
 	# SECTION 7: Print Debug Info
 	if config['printDebug']:
 		info = "\nNew Event: type({type})\tname({scancode} = {name})\tkeysDown({keysDown})\tkeypad({keypad})".format(type=event.event_type, \
-	                    name=event.name, scancode=scancode, keysDown=" | ".join(gstate['down']), keypad=event.is_keypad)
+				name=event.name, scancode=scancode, keysDown=" | ".join(gstate['down']), keypad=event.is_keypad)
 		if gstate['lastInfo'] != info:
 			printf(info, end="")
 			gstate['lastInfoCount'] = 0
@@ -155,16 +164,17 @@ def isDown(key):
 
 
 def shiftDown():
-	if not gstate['shiftDown']:
+	if not gstate['shiftDown'] and not gstate['stickyShift']:		# stop listening to shift when stick shift is on
 		#kb.press((42,54))
 		kb.press(("left shift", "right shift"))		# press right and left shift to counteract the numlock auto-unshift
 		gstate['shiftDown'] = True
 
 
 def shiftUp():
-	if gstate['shiftDown']:
+	if gstate['shiftDown']:		# prevent too many shift releases
+		# release both shifts, plus the automatic one (order is important for some reason)
 		#kb.release((42,42,54))
-		kb.release(("left shift", "left shift", "right shift"))		# release both shifts, plus the automatic one (order is important for some reason)
+		kb.release(("left shift", "left shift", "right shift"))
 		gstate['shiftDown'] = False
 
 
