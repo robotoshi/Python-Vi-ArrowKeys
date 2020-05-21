@@ -56,6 +56,7 @@ def hookCallback(event):
 	nameL = event.name.lower()
 	scancode = event.scan_code
 
+
 	# SECTION 1: Set hotkey for exiting the program
 	if (nameL == "end") and config['enableQuickExit']:
 		sys.exit()
@@ -74,11 +75,7 @@ def hookCallback(event):
 	
 
 	# SECTION 2.5: Numlock hack fix for shift-arrow selection
-	# if scancode in (42,54):
-	# 	if down_event:
-	# 		kb.press((42,54)) # press right and left shift to counteract the numlock auto-unshift
-	# 	else:
-	# 		kb.release((42,42,54)) # release both shifts, plus the automatic one (order is important for some reason)
+	#if scancode in (42,54):
 	if "shift" in nameL:
 		if down_event:
 			shiftDown()
@@ -90,11 +87,11 @@ def hookCallback(event):
 
 	
 	# SECTION 3: Pass through normal keys (will require keys down check later)
-	if ('d' not in gstate['down']) or (nameL not in config['specials']):
+	if not isDown('d') or nameL not in config['specials']:
 		# if d is not pressed and this isn't for a d
 		if down_event:
 			# Do 'cards' fix
-			if ('d' in gstate['down']) and (not gstate['dSentYet']):
+			if isDown('d') and not gstate['dSentYet']:
 				# don't send a 'd' if a hotkey follows before the d is released)
 				if (nameL not in ("shift", "left shift", "right shift", "up", "down", "left", "right") and not event.is_keypad):
 					kb.press('d')
@@ -113,7 +110,7 @@ def hookCallback(event):
 	if (nameL == 'd'):
 		if down_event:
 			# alternatively we could reset viTriggeredYet=False here
-			gstate['dSentYet'] = False # reset to not sent yet
+			gstate['dSentYet'] = False						# reset to not sent yet
 		else:
 			if (not gstate['viTriggeredYet']) and (not gstate['dSentYet']):
 				kb.send('d')
@@ -122,7 +119,7 @@ def hookCallback(event):
 
 
 	# SECTION 5: Fix "worl/world" bug
-	if any([thisVIKey in gstate['down'] for thisVIKey in config['maps'].keys()]) and (nameL == 'd' and down_event):
+	if any([isDown(k) for k in config['maps'].keys()]) and (nameL == 'd' and down_event):
 		# If any of the VI keys are currently pressed down, and 'd' is being PRESSED
 		kb.send('d') # this might only be a .press, actually; doesn't matter though
 		#printf("\nDid 'world' bug fix.")
@@ -130,7 +127,7 @@ def hookCallback(event):
 
 
 	# SECTION 6: Perform VI arrow remapping
-	if (nameL in config['maps'].keys()) and ('d' in gstate['down']):
+	if (nameL in config['maps'].keys()) and isDown('d'):
 		gstate['viTriggeredYet'] = True # VI triggered, no longer type a 'd' on release
 		thisSend = config['maps'][nameL]
 		if down_event:
@@ -151,16 +148,25 @@ def hookCallback(event):
 			printf(".", end="")
 			gstate['lastInfoCount'] += 1
 		gstate['lastInfo'] = info
-	
+
+
+def isDown(key):
+	return key in gstate['down']
+
+
 def shiftDown():
 	if not gstate['shiftDown']:
-		kb.press(("left shift", "right shift"))
+		#kb.press((42,54))
+		kb.press(("left shift", "right shift"))		# press right and left shift to counteract the numlock auto-unshift
 		gstate['shiftDown'] = True
+
 
 def shiftUp():
 	if gstate['shiftDown']:
-		kb.release(("left shift", "left shift", "right shift"))
+		#kb.release((42,42,54))
+		kb.release(("left shift", "left shift", "right shift"))		# release both shifts, plus the automatic one (order is important for some reason)
 		gstate['shiftDown'] = False
+
 
 def startHooks(waitAtEnd = False):
 	"""
