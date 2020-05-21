@@ -17,7 +17,7 @@ gstate = {						# global state of the system
 
 	"icon": None,				# system tray icon
 	"enabled": True,			# system tray enabled
-
+	"shiftDown": False			# whether or not shift is being pressed. Numlock fix makes checking this slightly weirder.
 }
 
 config = {
@@ -81,9 +81,9 @@ def hookCallback(event):
 	# 		kb.release((42,42,54)) # release both shifts, plus the automatic one (order is important for some reason)
 	if "shift" in nameL:
 		if down_event:
-			kb.press(("left shift", "right shift"))
+			shiftDown()
 		else:
-			kb.release(("left shift", "left shift", "right shift"))
+			shiftUp()
 
 	if nameL in ('up', 'down', 'left', 'right') or event.is_keypad:
 		gstate['viTriggeredYet'] = True
@@ -96,8 +96,13 @@ def hookCallback(event):
 			# Do 'cards' fix
 			if ('d' in gstate['down']) and (not gstate['dSentYet']):
 				# don't send a 'd' if a hotkey follows before the d is released)
-				if (nameL not in ('shift', 'left shift', 'right shift', 'up', 'down', 'left', 'right') and not event.is_keypad):
+				if (nameL not in ("shift", "left shift", "right shift", "up", "down", "left", "right") and not event.is_keypad):
 					kb.press('d')
+					# Fix "Discord" bug.  Release shift before typing the next character
+					shiftUp()
+					gstate['down'].discard("shift")
+					gstate['down'].discard("left shift")
+					gstate['down'].discard("right shift")
 					gstate['dSentYet'] = True
 			kb.press(scancode)
 		else:
@@ -147,6 +152,15 @@ def hookCallback(event):
 			gstate['lastInfoCount'] += 1
 		gstate['lastInfo'] = info
 	
+def shiftDown():
+	if not gstate['shiftDown']:
+		kb.press(("left shift", "right shift"))
+		gstate['shiftDown'] = True
+
+def shiftUp():
+	if gstate['shiftDown']:
+		kb.release(("left shift", "left shift", "right shift"))
+		gstate['shiftDown'] = False
 
 def startHooks(waitAtEnd = False):
 	"""
