@@ -7,6 +7,10 @@ This project was originally attempted in AHK (see the `ahk-attempt` branch), but
 
 In a previous version of Karabiner for Mac, this mode was triggered by pressing S+D. However, now it is triggered by only pressing D (as per the most recent version of the Mac software).
 
+## Acknowledgements
+* [Toshiro T.](https://github.com/robotoshi) contribute significantly in fixing the Number Lock bug, which rendered the project useless for months.
+* [Keyboard icon](https://icons8.com/icons/set/keyboard) by [Icons8](https://icons8.com).
+
 ## List of Remappings
 While holding D:
 * H -> Left Arrow
@@ -25,10 +29,16 @@ Modifier keys (specifically, shift) are applied as pressed. This tool can be use
 * Some keys, when typed very fast before or after a 'd', may behaviour weirdly: their position may be switched with the 'd' key. Examples of this include the 'tab' character. This can be solved on a character-by-character basis by adding them to the `config["hookKeys"]` list.
 
 ### Problematic Issues
-* Serious bug with keyboard having a number pad. When NUMLOCK is TURNED ON, the shift key does not work for arrow key presses.
-	* Example: Selection using the VI key mapping doesn't work while NUMLOCK ON
-	* This is currently fixed by requring NUMLOCK to be TURNED OFF, and all keypad keys act as their number.
 * Typing sequences like 'Did' causes both the 'Di' to be both capital or both lower case. No known fix currently. "Discord" with 'D' typed with 'right shift' is an example.
+```
+Exact Sample of this bug:
+shift	down
+d 		down
+shift	up
+i		down
+d 		up			obvious
+i		up			obvious
+```
 
 If you come up with a fix, please make a pull request.
 If you notice a bug, please open an issue and/or make a pull request.
@@ -46,7 +56,7 @@ There are even more VI mappings that can be added after. We'll start with these,
 ## Refactoring Suggestions
 * Combine `gstate["viTriggeredYet"]` and `gstate["dSentYet"]` into a single `gstate["stillSendD"]` variable, that records whether or not to send the 'd'. Resets (to True) on the start of a d press, and gets flagged (to False) when a VI key is pressed, or the first time a 'd' is sent.
 
-## Documentation
+## Code Documentation (Explanation of Code)
 The following sections are labelled with comments in the Python code. Each section is within the `hookCallback(event)` function, and handles a certain type of key press/release occurrence.
 
 ### **Section 1:** Fast exit hotkey
@@ -79,5 +89,3 @@ Prints debug info about the current event, and various states. In the future (or
 
 Sample of Debug Info: `New Event: type(down)   name(42 = shift)                keysDown(space|shift))`
 
-## Acknowledgements
-* [Keyboard icon](https://icons8.com/icons/set/keyboard) by [Icons8](https://icons8.com).

@@ -74,13 +74,11 @@ def hookCallback(event):
 	
 
 	# SECTION 2.5: Numlock hack fix for shift-arrow selection
-	"""
-	if scancode in (42,54):
-		if down_event:
-			kb.press((42,54)) # press right and left shift to counteract the numlock auto-unshift
-		else:
-			kb.release((42,42,54)) # release both shifts, plus the automatic one (order is important for some reason)
-	"""
+	# if scancode in (42,54):
+	# 	if down_event:
+	# 		kb.press((42,54)) # press right and left shift to counteract the numlock auto-unshift
+	# 	else:
+	# 		kb.release((42,42,54)) # release both shifts, plus the automatic one (order is important for some reason)
 	if "shift" in nameL:
 		if down_event:
 			kb.press(("left shift", "right shift"))
