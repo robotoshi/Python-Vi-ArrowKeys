@@ -17,7 +17,8 @@ gstate = {						# global state of the system
 
 	"icon": None,				# system tray icon
 	"enabled": True,			# system tray enabled
-	"shiftDown": False			# whether or not shift is being pressed. Numlock fix makes checking this slightly weirder.
+	"shiftDown": False,			# whether or not shift is being pressed. Numlock fix makes checking this slightly weirder.
+	"stickyShift": False			# whether sticky shift is engaged
 }
 
 config = {
@@ -55,6 +56,8 @@ def hookCallback(event):
 
 	nameL = event.name.lower()
 	scancode = event.scan_code
+	d_is_down = 'd' in gstate['down'] 
+
 
 
 	# SECTION 1: Set hotkey for exiting the program
@@ -79,7 +82,8 @@ def hookCallback(event):
 	if "shift" in nameL:
 		if down_event:
 			shiftDown()
-		else:
+			#gstate['stickyShift'] = d_is_down	# if shift is pressed while d is down, engage sticky shift
+		elif not gstate['stickyShift']:			# delay releasing shift if sticky shift is engaged
 			shiftUp()
 
 	if nameL in ('up', 'down', 'left', 'right') or event.is_keypad:
@@ -111,9 +115,11 @@ def hookCallback(event):
 		if down_event:
 			# alternatively we could reset viTriggeredYet=False here
 			gstate['dSentYet'] = False						# reset to not sent yet
+			gstate['stickyShift'] = gstate['shiftDown']		# engage sticky shift if a d is pressed while shift is down
 		else:
 			if (not gstate['viTriggeredYet']) and (not gstate['dSentYet']):
 				kb.send('d')
+				shiftUp()
 				gstate['dSentYet'] = True
 			gstate['viTriggeredYet'] = False # reset to false
 
@@ -129,6 +135,7 @@ def hookCallback(event):
 	# SECTION 6: Perform VI arrow remapping
 	if (nameL in config['maps'].keys()) and isDown('d'):
 		gstate['viTriggeredYet'] = True # VI triggered, no longer type a 'd' on release
+		gstate['stickyShift'] = False		# FIXME: repeated shift+D only capitalizes the first one
 		thisSend = config['maps'][nameL]
 		if down_event:
 			kb.press(thisSend)
@@ -155,17 +162,19 @@ def isDown(key):
 
 
 def shiftDown():
-	if not gstate['shiftDown']:
+	if not gstate['shiftDown'] and not gstate['stickyShift']:
 		#kb.press((42,54))
 		kb.press(("left shift", "right shift"))		# press right and left shift to counteract the numlock auto-unshift
 		gstate['shiftDown'] = True
 
 
 def shiftUp():
-	if gstate['shiftDown']:
+	if gstate['shiftDown'] or gstate['stickyShift']:
 		#kb.release((42,42,54))
 		kb.release(("left shift", "left shift", "right shift"))		# release both shifts, plus the automatic one (order is important for some reason)
 		gstate['shiftDown'] = False
+	
+	gstate['stickyShift'] = False
 
 
 def startHooks(waitAtEnd = False):
