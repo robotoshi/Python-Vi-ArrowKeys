@@ -8,7 +8,7 @@ This project was originally attempted in AHK (see the `ahk-attempt` branch), but
 In a previous version of Karabiner for Mac, this mode was triggered by pressing S+D. However, now it is triggered by only pressing D (as per the most recent version of the Mac software).
 
 ## Acknowledgements
-* [Toshiro T.](https://github.com/robotoshi) contribute significantly in fixing the Number Lock bug, which rendered the project useless for months.
+* [Toshiro T.](https://github.com/robotoshi) contributed significantly in fixing the Number Lock bug, which rendered the project useless for months.
 * [Keyboard icon](https://icons8.com/icons/set/keyboard) by [Icons8](https://icons8.com).
 
 ## List of Remappings
